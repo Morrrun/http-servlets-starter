@@ -15,7 +15,7 @@ public class HttpServer {
     private final ExecutorService pool;
     private final int port;
     //Флаг для регулирования цикла обработки запросов
-    private final boolean stopped;
+    private boolean stopped = false;
 
     //Инициализируем пул потоков в конструкторе по количеству возможных
     public HttpServer(int port, int poolSize) {
@@ -24,8 +24,7 @@ public class HttpServer {
     }
 
     public void run() {
-        try {
-            var serverSocket = new ServerSocket(port);
+        try (var serverSocket = new ServerSocket(port)){
             while (!stopped) {
                 //Ожидаем запроса от клиента
                 var socket = serverSocket.accept();
@@ -46,6 +45,7 @@ public class HttpServer {
             //Step 1 Handle request
             System.out.println("Request: " + new String(inputStream.readNBytes(400)));
 
+            Thread.sleep(10000);
             //Step 2 Handle response(creating)
             byte[] body = Files.readAllBytes(Path.of("resources/html", "example.html"));
             //Создаем стартовую строку с заголовками
@@ -62,10 +62,14 @@ public class HttpServer {
             //Передаем тело
             outputStream.write(body);
 
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             //Здесь необходимо логировать информацию,
             //и ни в коем случае не пробрасывать Exception,
             //иначе мы остановим сервер
         }
+    }
+
+    public void setStopped(boolean stopped) {
+        this.stopped = stopped;
     }
 }
